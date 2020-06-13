@@ -19,8 +19,3 @@ class StageToRedshiftOperator(BaseOperator):
 
     def execute(self, context):
         self.log.info('StageToRedshiftOperator not implemented yet')
-
-
-
-
-

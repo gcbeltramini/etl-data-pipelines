@@ -9,9 +9,15 @@ from helpers import SqlQueries
 # AWS_KEY = os.environ.get('AWS_KEY')
 # AWS_SECRET = os.environ.get('AWS_SECRET')
 
+# Example in https://airflow.apache.org/docs/stable/tutorial.html
 default_args = {
-    'owner': 'udacity',
+    'owner': 'etl-data-pipelines',
     'start_date': datetime(2019, 1, 12),
+    'depends_on_past': False,
+    'retries': 3,
+    'retry_delay': timedelta(minutes=5),
+    'catchup': False,
+    'email_on_retry': False,
 }
 
 dag = DAG('udac_example_dag',
