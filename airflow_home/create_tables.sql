@@ -1,3 +1,14 @@
+DROP TABLE IF EXISTS public.staging_events CASCADE;
+DROP TABLE IF EXISTS public.staging_songs CASCADE;
+
+DROP TABLE IF EXISTS public.songplays CASCADE;
+
+DROP TABLE IF EXISTS public.artists CASCADE;
+DROP TABLE IF EXISTS public.songs CASCADE;
+DROP TABLE IF EXISTS public."time" CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;
+
+
 CREATE TABLE public.artists (
 	artistid varchar(256) NOT NULL,
 	name varchar(256),

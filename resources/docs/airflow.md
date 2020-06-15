@@ -10,13 +10,22 @@ conda create -yn etl-airflow python=3.6
 conda activate etl-airflow
 
 # Set Airflow home (optional; default: ~/airflow)
-export AIRFLOW_HOME=~/airflow
+base_dir="$(pwd)"
+export AIRFLOW_HOME="${base_dir}/airflow_home"
 
 # Install
-python -m pip install apache-airflow
+python -m pip install 'apache-airflow[aws,postgres]'
 
 # Initialize the database
+cd "${AIRFLOW_HOME}"
 airflow initdb
+
+# Check if nothing is wrong (there should be no error message)
+python "${AIRFLOW_HOME}/dags/etl_dag.py"
+
+# List the DAGs
+airflow list_dags
+# To remove the examples, set `load_examples = False` in `airflow.cfg`.
 ```
 
 Airflow UI:
@@ -25,6 +34,7 @@ Airflow UI:
 conda activate etl-airflow
 
 # Start the web server, default port is 8080
+export AIRFLOW_HOME="${base_dir}/airflow_home"
 airflow webserver -p 8080
 ```
 
@@ -34,6 +44,7 @@ Scheduler (in another terminal):
 conda activate etl-airflow
 
 # Start the scheduler
+export AIRFLOW_HOME="${base_dir}/airflow_home"
 airflow scheduler
 ```
 
