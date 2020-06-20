@@ -13,7 +13,7 @@ CREATE TABLE public.artists (
 	artistid varchar(256) NOT NULL,
 	name varchar(256),
 	location varchar(256),
-	lattitude numeric(18,0),
+	latitude numeric(18,0),
 	longitude numeric(18,0)
 );
 
@@ -82,7 +82,7 @@ CREATE TABLE public."time" (
 	"year" int4,
 	weekday varchar(256),
 	CONSTRAINT time_pkey PRIMARY KEY (start_time)
-) ;
+);
 
 CREATE TABLE public.users (
 	userid int4 NOT NULL,

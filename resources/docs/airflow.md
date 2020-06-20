@@ -10,15 +10,16 @@ conda create -yn etl-airflow python=3.6
 conda activate etl-airflow
 
 # Set Airflow home (optional; default: ~/airflow)
-base_dir="$(pwd)"
+base_dir="$(pwd)" # project folder
 export AIRFLOW_HOME="${base_dir}/airflow_home"
 
 # Install
 python -m pip install 'apache-airflow[aws,postgres]'
 
 # Initialize the database
-cd "${AIRFLOW_HOME}"
+pushd "${AIRFLOW_HOME}" 1>/dev/null
 airflow initdb
+popd 1>/dev/null
 
 # Check if nothing is wrong (there should be no error message)
 python "${AIRFLOW_HOME}/dags/etl_dag.py"
@@ -34,6 +35,7 @@ Airflow UI:
 conda activate etl-airflow
 
 # Start the web server, default port is 8080
+base_dir="$(pwd)" # project folder
 export AIRFLOW_HOME="${base_dir}/airflow_home"
 airflow webserver -p 8080
 ```
@@ -44,6 +46,7 @@ Scheduler (in another terminal):
 conda activate etl-airflow
 
 # Start the scheduler
+base_dir="$(pwd)" # project folder
 export AIRFLOW_HOME="${base_dir}/airflow_home"
 airflow scheduler
 ```
@@ -55,7 +58,7 @@ other browsers occasionally have issues rendering the Airflow UI),
 
 1. To go to the Airflow UI
 1. Menu "Admin" --> "Connections" --> "Create"
-1. Enter the AWS credentials:
+1. Enter the AWS credentials with at least read access to S3 (obtained [here](aws_redshift.md#create-an-iam-user)):
    - `Conn Id`: "aws_credentials"
    - `Conn Type`: "Amazon Web Services"
    - `Login`: enter the AWS access key ID
@@ -65,12 +68,13 @@ other browsers occasionally have issues rendering the Airflow UI),
 console](https://console.aws.amazon.com/redshift/)):
    - `Conn Id`: "redshift"
    - `Conn Type`: "Postgres"
-   - `Host`: enter the endpoint of the Redshift cluster, excluding the port at the end (e.g.,
-   `<cluster-name>.<cluster-id>.<region>.redshift.amazonaws.com`)
+   - `Host`: enter the endpoint of the Redshift cluster, excluding the port and schema at the end
+   (e.g., `<cluster-name>.<cluster-id>.<region>.redshift.amazonaws.com`)
    - `Schema`: "dev"
    - `Login`: "awsuser"
    - `Password`: enter the password created when launching the Redshift cluster
    - `Port`: 5439
+1. "Save"
 
 ## Configure the DAG
 

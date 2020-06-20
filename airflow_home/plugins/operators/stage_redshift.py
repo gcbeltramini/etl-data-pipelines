@@ -3,6 +3,9 @@ from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
+from operators.constants import (AWS_CREDENTIALS_ID, AWS_REGION, REDSHIFT_CONN_ID,
+                                 S3_BUCKET)
+
 
 class StageToRedshiftOperator(BaseOperator):
     ui_color = '#358140'
@@ -18,12 +21,12 @@ class StageToRedshiftOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 redshift_conn_id: str,
-                 aws_credentials_id: str,
-                 s3_bucket: str,
                  s3_key: str,
                  table: str,
-                 aws_region: str = 'us-west-2',
+                 redshift_conn_id: str = REDSHIFT_CONN_ID,
+                 aws_credentials_id: str = AWS_CREDENTIALS_ID,
+                 s3_bucket: str = S3_BUCKET,
+                 aws_region: str = AWS_REGION,
                  json_path: str = 'auto',
                  *args, **kwargs):
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
