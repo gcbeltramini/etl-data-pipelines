@@ -26,14 +26,15 @@ dag = DAG('etl_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
           schedule_interval='@hourly',
-        )
+          )
 
 start_operator = DummyOperator(task_id='Begin_execution', dag=dag)
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
     dag=dag,
-    s3_key='log_data/',  # 'log_data/{execution_date.year}/{execution_date.month}/'
+    s3_key='log_data/',
+    # 'log_data/{execution_date.year}/{execution_date.month}/'
     table='public.staging_events',
     json_path='s3://udacity-dend/log_json_path.json',
 )
@@ -83,6 +84,23 @@ load_time_dimension_table = LoadDimensionOperator(
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag,
+    count_comparisons=(
+        {'table1': 'public.staging_events', 'col': 'userid',
+         'table2': 'public.users'},
+        {'table1': 'public.staging_events', 'col': 'ts',
+         'table2': 'public.time'},
+        {'table1': 'public.staging_songs', 'col': 'song_id',
+         'table2': 'public.songs'},
+        {'table1': 'public.staging_songs', 'col': 'artist_id',
+         'table2': 'public.artists'},
+    ),
+    not_null_cols=(
+        {'table': 'public.artists', 'cols': ['artistid']},
+        {'table': 'public.songplays', 'cols': ['playid', 'start_time']},
+        {'table': 'public.songs', 'cols': ['songid']},
+        {'table': 'public."time"', 'cols': ['start_time']},
+        {'table': 'public.users', 'cols': ['userid']},
+    )
 )
 
 end_operator = DummyOperator(task_id='Stop_execution', dag=dag)
@@ -90,6 +108,7 @@ end_operator = DummyOperator(task_id='Stop_execution', dag=dag)
 (start_operator
  >> [stage_events_to_redshift, stage_songs_to_redshift]
  >> load_songplays_table
- >> [load_user_dimension_table, load_song_dimension_table, load_artist_dimension_table, load_time_dimension_table]
+ >> [load_user_dimension_table, load_song_dimension_table,
+     load_artist_dimension_table, load_time_dimension_table]
  >> run_quality_checks
  >> end_operator)

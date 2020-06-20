@@ -1,3 +1,5 @@
+from typing import Any, Dict, Sequence
+
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -10,10 +12,49 @@ class DataQualityOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
+                 count_comparisons: Sequence[Dict[str, Any]],
+                 not_null_cols: Sequence[Dict[str, Any]],
                  redshift_conn_id: str = REDSHIFT_CONN_ID,
                  *args, **kwargs):
+        """
+        Data quality operator. Run all checks, logging any error. If there are
+        errors, all of them are logged and an error is raised only after all
+        checks ran.
+
+        Parameters
+        ----------
+        count_comparisons : sequence[dict]
+            Compare the number of distinct rows in column "col" of "table1",
+            and the number of rows in "table2". The first number must be less
+            than or equal to the second number. For example,
+
+            comparisons = ({'table1': 'my_table', 'col': 'my_col',
+                            'table2': 'another_table'},)
+
+            will check if the number of distinct rows in `my_table.my_col` is
+            less than or equal to the number of rows in `another_table`.
+
+            There can be an arbitrary number of comparisons; the only
+            restriction is that the keys in the `dict` must be "table1", "col"
+            and "table2".
+        not_null_cols : sequence[dict]
+            Check if there is any NULL value in the given columns. For example,
+
+            not_null_cols = ({'table': 'my_table', 'cols': ['c1', 'c2']},)
+
+            will check if there is any NULL values in columns `my_table.c1` and
+            `my_table.c2`.
+
+            There can be an arbitrary number of checks; the only restriction is
+            that the keys in the `dict` must be "table" and "cols".
+        redshift_conn_id : str, optional
+        *args, **kwargs
+            Additional arguments to pass to `airflow.models.BaseOperator`
+        """
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
+        self.count_comparisons = count_comparisons
+        self.not_null_cols = not_null_cols
 
     def check_result_not_empty(self, records: list, table: str) -> bool:
         contains_result = True
@@ -24,20 +65,9 @@ class DataQualityOperator(BaseOperator):
         return contains_result
 
     def has_valid_count(self, redshift: PostgresHook) -> bool:
-        comparisons = (
-            {'table1': 'public.staging_events', 'col': 'userid',
-             'table2': 'public.users'},
-            {'table1': 'public.staging_events', 'col': 'ts',
-             'table2': 'public.time'},
-            {'table1': 'public.staging_songs', 'col': 'song_id',
-             'table2': 'public.songs'},
-            {'table1': 'public.staging_songs', 'col': 'artist_id',
-             'table2': 'public.artists'},
-        )
-
         has_error = False
 
-        for comparison in comparisons:
+        for comparison in self.count_comparisons:
             table1 = comparison['table1']
             col = comparison['col']
             table2 = comparison['table2']
@@ -76,15 +106,8 @@ class DataQualityOperator(BaseOperator):
 
     def has_valid_nulls(self, redshift: PostgresHook) -> bool:
         has_error = False
-        not_null_cols = (
-            {'table': 'public.artists', 'cols': ['artistid']},
-            {'table': 'public.songplays', 'cols': ['playid', 'start_time']},
-            {'table': 'public.songs', 'cols': ['songid']},
-            {'table': 'public."time"', 'cols': ['start_time']},
-            {'table': 'public.users', 'cols': ['userid']},
-        )
         sql = 'SELECT COUNT(*) FROM {table:s} WHERE {col:s} IS NULL;'
-        for t in not_null_cols:
+        for t in self.not_null_cols:
             table = t['table']
             for col in t['cols']:
                 records = redshift.get_records(sql.format(table=table,
